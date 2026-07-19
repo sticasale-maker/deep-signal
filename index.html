@@ -231,16 +231,25 @@
 
 <script>
 /* ---------------- ROUTE + CONTENT ----------------
-   Bearings are TRUE degrees (clockwise from north), measured off the hall
-   plan: the floor grid is rotated ~11.7 deg from cardinal, so the aisles run
-   323.9/143.9 (the long ones) and 53.9/233.9 (the cross ones). Every leg is a
-   single straight run down one aisle — the route was redrawn for that.
-   Distances are metres off the same plan. Each site code resets dead-reckoning
-   drift, which is the whole point of logging them. */
+   Bearings are MAGNETIC degrees (clockwise from magnetic north), read straight
+   off the hall plan's compass rose — the rose points magnetic north, not true.
+   Sydney's declination is ~12 deg east, so true = magnetic + 12, which puts
+   true north straight up the page. Magnetic is deliberate: it's the frame
+   handset compasses report in.
+   The floor grid sits 24.1 deg off true cardinal, which leaves exactly two
+   aisle directions — 323.9/143.9 (the long ones) and 53.9/233.9 (the cross
+   ones). Every leg is a single straight run down one aisle; the route was
+   redrawn for that. Distances are metres off the same plan. Each site code
+   resets dead-reckoning drift, which is the whole point of logging them. */
 
-/* Raw device heading is mapped to true bearing by a single offset captured at
-   calibration, while the player points along leg 1 out of the VIZ booth. */
-const CAL_BEARING = 323.9;
+/* Raw device heading is mapped onto that frame by one offset captured at
+   calibration, while the player points along leg 1 out of the VIZ booth.
+   A constant frame mismatch — magnetic vs true, or a handset that's simply
+   off — cancels out, since only the DIFFERENCES between leg bearings survive
+   the offset. The frame therefore only matters on the "skip calibration"
+   path, where an offset of 0 means trusting the handset's compass as-is. */
+const MAG_DECLINATION = 12;   // degrees east (Sydney): true = magnetic + this
+const CAL_BEARING = 323.9;    // magnetic, along leg 1 out of the VIZ booth
 const ROUTE = [
   { legs:[
       {instr:"Step out of the VIZ booth and head up the aisle, hall wall on your right, toward the 340 block.", bearing:323.9, m:11.9}
@@ -366,7 +375,7 @@ async function enableSensors(){
 }
 
 /* --------------- HELPERS --------------- */
-/* Raw device heading the player must face to walk a given TRUE bearing. */
+/* Raw device heading the player must face to walk a given MAGNETIC bearing. */
 function targetHeading(bearing){
   const off = (S.calOffset!=null)? S.calOffset : 0;
   return ((bearing + off)%360+360)%360;

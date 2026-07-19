@@ -32,16 +32,28 @@ arrangement.
 | 6 | `PELAGIC` | behind the Main Stage | 512 → stage | 53.9° | 28.6 m |
 | — | — | 440 VIZ (finish) | stage → 440 | 323.9° | 10.3 m |
 
-Bearings are **true** degrees, measured off `map&itinerary.pdf`: booth
+Bearings are **magnetic** degrees, measured off `map&itinerary.pdf`: booth
 modules give the scale (3 m = 68.3 px at 8× render) and the compass rose gives
-north (page angle 77.8°). The floor grid is rotated ~11.7° from cardinal, so
-only two aisle directions exist — 323.9/143.9 and 53.9/233.9 — and every leg
-is a single straight run down one of them. Total 126.8 m; the vector loop
-closes to 5.7 m, which is inside the ~9.6 m of QR gaps the drawing doesn't
-cover.
+north (page angle 77.8°).
 
-Raw device heading is converted to true bearing by one offset captured at
-calibration (`CAL_BEARING`), while the player points along leg 1.
+The rose points **magnetic** north, not true. Sydney's declination is ~12° E,
+so `true = magnetic + 12` — which places true north at page angle 89.8°,
+i.e. straight up the page, as you'd expect a hall plan to be drawn. That
+0.2° residual is the independent check that the scale and rose readings are
+sound.
+
+The floor grid sits **24.1° off true cardinal** (36.1° off magnetic — the two
+differ by the declination), leaving only two aisle directions, 323.9/143.9 and
+53.9/233.9, so every leg is a single straight run down one of them. Total
+126.8 m; the vector loop closes to 5.7 m, inside the ~9.6 m of QR gaps the
+drawing doesn't cover.
+
+Raw device heading is mapped onto that frame by one offset captured at
+calibration (`CAL_BEARING`), while the player points along leg 1. **A constant
+frame mismatch cancels out** — only the differences between leg bearings
+survive the offset — so magnetic-vs-true only affects the *skip calibration*
+path, where an offset of 0 trusts the handset's compass directly. Storing
+magnetic is deliberate: that's the frame handsets report in.
 
 ## URL parameters
 
