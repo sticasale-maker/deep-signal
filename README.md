@@ -17,8 +17,31 @@ Static site, no backend. Installable as a PWA and fully playable offline.
 
 ## The route
 
-`WRECK → CORAL → ABYSS → CAVERN → PELAGIC`, in that order. The order is
-enforced in the app, so plaques can be hung in any physical arrangement.
+Six logged stops in a closed loop out of and back to the VIZ booth (440).
+The order is enforced in the app, so plaques can be hung in any physical
+arrangement.
+
+| # | code | stop | leg in | bearing | dist |
+|---|---|---|---|---|---|
+| — | — | 440 VIZ (start) | — | — | — |
+| 1 | `WRECK` | Historical Diving Society 340 | 440 → 340 | 323.9° | 11.9 m |
+| 2 | `CORAL` | Tech Stage | 340 → tech | 323.9° | 14.0 m |
+| 3 | `DRIFT` | Forster Dive Center 134 | tech → 134 | 233.9° | 8.7 m |
+| 4 | `ABYSS` | south-east wall | 134 → wall | 143.9° | 38.6 m |
+| 5 | `CAVERN` | Royal Australian Navy 512 | wall → 512 | 233.9° | 14.7 m |
+| 6 | `PELAGIC` | behind the Main Stage | 512 → stage | 53.9° | 28.6 m |
+| — | — | 440 VIZ (finish) | stage → 440 | 323.9° | 10.3 m |
+
+Bearings are **true** degrees, measured off `map&itinerary.pdf`: booth
+modules give the scale (3 m = 68.3 px at 8× render) and the compass rose gives
+north (page angle 77.8°). The floor grid is rotated ~11.7° from cardinal, so
+only two aisle directions exist — 323.9/143.9 and 53.9/233.9 — and every leg
+is a single straight run down one of them. Total 126.8 m; the vector loop
+closes to 5.7 m, which is inside the ~9.6 m of QR gaps the drawing doesn't
+cover.
+
+Raw device heading is converted to true bearing by one offset captured at
+calibration (`CAL_BEARING`), while the player points along leg 1.
 
 ## URL parameters
 

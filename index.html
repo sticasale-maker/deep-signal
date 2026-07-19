@@ -105,7 +105,7 @@
   <section class="screen on" id="s-welcome">
     <div class="eyebrow">Dive Log · Sydney Reef Hall</div>
     <h1>Deep Signal</h1>
-    <p>Your GPS is dark down here — just like a real dive. You'll navigate by <b>compass bearing</b> and <b>counted fin-strokes</b> to five dive sites, logging the species and treasures you find, and surface back where you started.</p>
+    <p>Your GPS is dark down here — just like a real dive. You'll navigate by <b>compass bearing</b> and <b>counted fin-strokes</b> to six dive sites, logging the species and treasures you find, and surface back where you started.</p>
     <div class="card">
       <p class="steno">This prototype uses your phone's compass and motion sensors. They only switch on after you tap below, and nothing leaves your phone.</p>
     </div>
@@ -135,7 +135,7 @@
   <section class="screen" id="s-heading">
     <div class="eyebrow">Calibration · 2 of 2</div>
     <h2>Align the console</h2>
-    <p>Stand at the start (east corner of the <b>VIZ</b> booth). Hold the phone flat and point its top edge straight down the aisle <b>toward the Main Stage</b>. Hold steady, then lock it in.</p>
+    <p>Stand at the <b>VIZ</b> booth (440). Hold the phone flat and point its top edge straight up the aisle — the way you'll swim off first, <b>toward the 340 block and the Tech Stage beyond it</b>. Hold steady, then lock it in.</p>
     <div class="gauge" id="cal-gauge">
       <div class="bezel"></div>
       <div class="rose" id="cal-rose"></div>
@@ -209,7 +209,7 @@
   <section class="screen" id="s-fin">
     <div class="eyebrow">Surface interval</div>
     <h1>Dive logged.</h1>
-    <p>You navigated the whole reef by bearing and breath alone and surfaced right where you started — at the <b>VIZ</b> booth. Five sites, five finds. Show this screen at the VIZ booth to claim your logbook stamp.</p>
+    <p>You navigated the whole reef by bearing and breath alone and surfaced right where you started — at the <b>VIZ</b> booth. Six sites, six finds. Show this screen at the VIZ booth to claim your logbook stamp.</p>
     <div class="card center"><div class="big" id="fin-count">5</div><div class="unit">sites logged</div></div>
     <div class="spacer"></div>
     <button class="btn ghost" onclick="App.resetAll()">Dive again</button>
@@ -231,14 +231,19 @@
 
 <script>
 /* ---------------- ROUTE + CONTENT ----------------
-   Venue frame (degrees): EAST(toward Main Stage)=0, NORTH(Catering)=90,
-   WEST(PADI)=180, SOUTH(Pool)=270.  Calibration records the phone's raw
-   heading while pointing EAST, from which all four aisle bearings follow.
-   Distances are map estimates in metres; the site code resets drift. */
+   Bearings are TRUE degrees (clockwise from north), measured off the hall
+   plan: the floor grid is rotated ~11.7 deg from cardinal, so the aisles run
+   323.9/143.9 (the long ones) and 53.9/233.9 (the cross ones). Every leg is a
+   single straight run down one aisle — the route was redrawn for that.
+   Distances are metres off the same plan. Each site code resets dead-reckoning
+   drift, which is the whole point of logging them. */
+
+/* Raw device heading is mapped to true bearing by a single offset captured at
+   calibration, while the player points along leg 1 out of the VIZ booth. */
+const CAL_BEARING = 323.9;
 const ROUTE = [
   { legs:[
-      {instr:"Step off the VIZ booth into the aisle — head WEST, just clear of the booth face.", dir:180, m:4},
-      {instr:"Turn NORTH up the east aisle, toward the Catering & Bar end.", dir:90, m:11}
+      {instr:"Step out of the VIZ booth and head up the aisle, hall wall on your right, toward the 340 block.", bearing:323.9, m:11.9}
     ],
     site:{ tag:"Site 1 · The Wreck", title:"Historical Diving Society — Booth 340",
       code:"WRECK",
@@ -248,10 +253,9 @@ const ROUTE = [
       fb:"Surface-supplied — the tethered hard-hat rig that first opened the deep to working divers." }
   },
   { legs:[
-      {instr:"Leave the wreck heading WEST, straight across the upper avenue toward the reef gardens.", dir:180, m:26},
-      {instr:"Short jog SOUTH into the centre of the hall.", dir:270, m:6}
+      {instr:"Carry straight on up the same aisle, all the way to the Tech Stage at the top of the hall.", bearing:323.9, m:14.0}
     ],
-    site:{ tag:"Site 2 · The Reef", title:"Bunaken Oasis — Booth 328",
+    site:{ tag:"Site 2 · The Reef", title:"Tech Stage — north end of the hall",
       code:"CORAL",
       lore:"The blue erupts into colour: staghorn thickets, a clownfish standing its ground in an anemone, parrotfish grinding the reef to sand. A whole city built by animals smaller than your thumbnail.",
       q:"Reef-building corals owe their colour and much of their food to a partner living inside them. What is it?",
@@ -259,20 +263,29 @@ const ROUTE = [
       fb:"Zooxanthellae — symbiotic algae. Stress them and the coral bleaches white." }
   },
   { legs:[
-      {instr:"Push on WEST toward the far wall — PADI and the shops.", dir:180, m:22},
-      {instr:"Turn SOUTH and descend to the bottom-left corner.", dir:270, m:14}
+      {instr:"Turn left and run along the top of the hall, past Dive Centre Bondi.", bearing:233.9, m:8.7}
     ],
-    site:{ tag:"Site 3 · The Abyss", title:"Abyss Scuba Diving — Booth 404",
+    site:{ tag:"Site 3 · The Drift", title:"Forster Dive Center — Booth 134",
+      code:"DRIFT",
+      lore:"You stop finning. The current has you — a slow conveyor of cool water pulling you along the wall, gorgonians all bent the same way, everything travelling together. Work with it and it costs you nothing.",
+      q:"On a drift dive, the boat usually doesn't anchor. Why?",
+      opts:["Anchors scare the fish","It follows the divers' bubbles or float and picks them up downstream","The water is too deep to anchor anywhere","Anchoring is banned on all dive sites"], a:1,
+      fb:"It tracks you and collects you downstream — you ride the current instead of fighting back to a fixed line." }
+  },
+  { legs:[
+      {instr:"Turn left again for the long haul — the full length of the hall down the wide aisle, past Tourism Fiji and Dive Adventures.", bearing:143.9, m:38.6}
+    ],
+    site:{ tag:"Site 4 · The Wall", title:"South-east wall — bottom of the hall",
       code:"ABYSS",
-      lore:"The light drains away. Down here things make their own — a lantern of living cold-blue, a gulper's jaw, eyes the size of dinner plates. Pressure you can feel in your teeth.",
+      lore:"The reef simply ends. You hang over the lip and the wall drops away under you until the blue goes black. The light drains out of it, and things down there make their own.",
       q:"That living blue-green light so many deep-sea animals produce is called…",
       opts:["Fluorescence","Phosphorescence","Bioluminescence","Iridescence"], a:2,
       fb:"Bioluminescence — light made by chemistry, not reflection. Your whole game is named after it." }
   },
   { legs:[
-      {instr:"Track EAST along the bottom avenue, past SDI Oceania.", dir:0, m:26}
+      {instr:"Turn right and track along the bottom wall toward the Royal Australian Navy stand.", bearing:233.9, m:14.7}
     ],
-    site:{ tag:"Site 4 · The Cave", title:"Tank Cave VR — Booth 522",
+    site:{ tag:"Site 5 · The Cave", title:"Royal Australian Navy — Booth 512",
       code:"CAVERN",
       lore:"You slip under an overhang and the ceiling closes over you. No straight line up to the surface now — only the line you laid on the way in. Silt hangs like held breath.",
       q:"The single most important rule that keeps cave divers alive is…",
@@ -280,10 +293,9 @@ const ROUTE = [
       fb:"The guideline — your unbroken thread back to daylight. Lose it and the cave keeps you." }
   },
   { legs:[
-      {instr:"Rise NORTH off the cave floor into open water.", dir:90, m:10},
-      {instr:"Turn EAST and cruise the blue toward Dive Adventures.", dir:0, m:14}
+      {instr:"Turn about and cruise the bottom of the hall the other way, toward the rear of the Main Stage.", bearing:53.9, m:28.6}
     ],
-    site:{ tag:"Site 5 · The Blue", title:"Dive Adventures — Booth 430",
+    site:{ tag:"Site 6 · The Blue", title:"Behind the Main Stage",
       code:"PELAGIC",
       lore:"No bottom, no walls — just blue in every direction and shapes cruising its edge. A shadow resolves into a manta, then a school turns as one and is gone.",
       q:"Big open-water swimmers like tuna, sharks and mantas are known as…",
@@ -291,7 +303,7 @@ const ROUTE = [
       fb:"Pelagic — animals of the open water column, forever on the move." }
   }
 ];
-const FINISH = { instr:"Home stretch — bear EAST back to the VIZ booth where you started.", dir:0, m:14 };
+const FINISH = { instr:"Home stretch — turn left up the east aisle and surface at the VIZ booth.", bearing:323.9, m:10.3 };
 
 /* --------------- URL QUERY ----------------
    ?site=CODE  — scanned from a dive-site plaque. Held until the player is
@@ -309,7 +321,9 @@ if(QP.has("site")){            // strip the code so a reload can't replay it
 
 /* --------------- STATE --------------- */
 const KEY="deepsignal.v1";
-let S = load() || { stride:0.72, calHeading:null, defaultEast:105, idx:0, leg:0, stepsDone:0 };
+/* calOffset = rawHeading - trueBearing, captured once at calibration. Null
+   means uncalibrated: fall back to trusting the device compass as true. */
+let S = load() || { stride:0.72, calOffset:null, idx:0, leg:0, stepsDone:0 };
 function load(){ try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null} }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} }
 
@@ -352,9 +366,10 @@ async function enableSensors(){
 }
 
 /* --------------- HELPERS --------------- */
-function targetHeading(dir){                 // raw device heading to face for a venue direction
-  const east = (S.calHeading!=null)? S.calHeading : S.defaultEast;
-  return ((east - dir)%360+360)%360;
+/* Raw device heading the player must face to walk a given TRUE bearing. */
+function targetHeading(bearing){
+  const off = (S.calOffset!=null)? S.calOffset : 0;
+  return ((bearing + off)%360+360)%360;
 }
 function angDiff(a,b){ let d=((a-b)%360+540)%360-180; return d; }
 const $=id=>document.getElementById(id);
@@ -379,7 +394,7 @@ function currentLeg(){
 }
 function renderNav(){
   const leg=currentLeg();
-  const tgt=targetHeading(leg.dir);
+  const tgt=targetHeading(leg.bearing);
   $("nav-rose").style.transform = heading!=null?`rotate(${-heading}deg)`:"";
   const g=$("nav-gauge"), arrow=$("nav-arrow");
   if(heading!=null){
@@ -402,7 +417,7 @@ const App={
     $("sensor-note").textContent = notes.length? "Note: "+notes.join(" · ") : "";
     // resume where we left off
     if(S.idx>=ROUTE.length){ App.finish(); return; }
-    show(S.calHeading===null && S.idx===0 ? "s-stride" : "s-nav");
+    show(S.calOffset===null && S.idx===0 ? "s-stride" : "s-nav");
     if(!$("s-stride").classList.contains("on")) App.startLeg();
     App.paintStride();
     App.applyPendingSite();
@@ -434,9 +449,11 @@ const App={
   },
   saveHeading(){
     if(heading==null){ App.skipHeading(); return; }
-    S.calHeading=heading; save(); App.startLeg(); show("s-nav"); App.applyPendingSite();
+    // The player is pointing along leg 1, so raw-minus-true gives the offset.
+    S.calOffset=((heading-CAL_BEARING)%360+360)%360;
+    save(); App.startLeg(); show("s-nav"); App.applyPendingSite();
   },
-  skipHeading(){ if(S.calHeading==null) S.calHeading=null; save(); App.startLeg(); show("s-nav"); App.applyPendingSite(); },
+  skipHeading(){ S.calOffset=null; save(); App.startLeg(); show("s-nav"); App.applyPendingSite(); },
 
   startLeg(){
     S.stepsDone=0; save();
@@ -505,7 +522,7 @@ const App={
   },
   nextLeg(){ S.idx++; S.leg=0; save(); if(S.idx>=ROUTE.length){ App.startLeg(); show("s-nav"); } else { App.startLeg(); show("s-nav"); } },
   finish(){ $("fin-count").textContent=ROUTE.length; show("s-fin"); },
-  resetAll(){ localStorage.removeItem(KEY); S={stride:0.72,calHeading:null,defaultEast:105,idx:0,leg:0,stepsDone:0}; pedOn=false; show("s-welcome"); }
+  resetAll(){ localStorage.removeItem(KEY); S={stride:0.72,calOffset:null,idx:0,leg:0,stepsDone:0}; pedOn=false; show("s-welcome"); }
 };
 
 /* step() from pedometer decrements the live leg */
@@ -522,7 +539,7 @@ const Dev={
     document.body.classList.add("dev");
     $("devbar").classList.add("on");
     const sl=$("dev-h");
-    sl.value = S.calHeading!=null ? Math.round(S.calHeading) : S.defaultEast;
+    sl.value = Math.round(CAL_BEARING + (S.calOffset||0));
     Dev.set(+sl.value);
     sl.addEventListener("input",()=>Dev.set(+sl.value));
     document.addEventListener("keydown",e=>{
@@ -540,8 +557,8 @@ const Dev={
     $("dev-head").textContent=Math.round(heading)+"°";
     render();
   },
-  face(){ if($("s-nav").classList.contains("on")) Dev.set(targetHeading(currentLeg().dir));
-          else if($("s-heading").classList.contains("on")) Dev.set(S.defaultEast); },
+  face(){ if($("s-nav").classList.contains("on")) Dev.set(targetHeading(currentLeg().bearing));
+          else if($("s-heading").classList.contains("on")) Dev.set(CAL_BEARING); },
   step(n){ for(let i=0;i<n;i++) step(); },
   walk(){ if(!$("s-nav").classList.contains("on")) return;
           S.stepsDone=App.legTotal(); save(); App.updateSteps(); },

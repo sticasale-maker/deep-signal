@@ -26,16 +26,18 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ---------------------------------------------------------------- config
 
-# NOTE: confirm this against the real GitHub Pages URL before printing.
-PAGES_URL = "https://sticasale-maker.github.io/deep-signal/"
+# Live site. sticasale-maker.github.io/deep-signal/ 301s here — the custom
+# domain on the user Pages site covers every project repo at /<repo>/.
+PAGES_URL = "https://app.viz.net.au/deep-signal/"
 
 # Mirrors ROUTE[].site in index.html — verified against it at run time.
 SITES = [
-    (1, "The Wreck",  "WRECK",   "Historical Diving Society — Booth 340"),
-    (2, "The Reef",   "CORAL",   "Bunaken Oasis — Booth 328"),
-    (3, "The Abyss",  "ABYSS",   "Abyss Scuba Diving — Booth 404"),
-    (4, "The Cave",   "CAVERN",  "Tank Cave VR — Booth 522"),
-    (5, "The Blue",   "PELAGIC", "Dive Adventures — Booth 430"),
+    (1, "The Wreck", "WRECK",   "Historical Diving Society — Booth 340"),
+    (2, "The Reef",  "CORAL",   "Tech Stage — north end of the hall"),
+    (3, "The Drift", "DRIFT",   "Forster Dive Center — Booth 134"),
+    (4, "The Wall",  "ABYSS",   "South-east wall — bottom of the hall"),
+    (5, "The Cave",  "CAVERN",  "Royal Australian Navy — Booth 512"),
+    (6, "The Blue",  "PELAGIC", "Behind the Main Stage"),
 ]
 
 DPI = 300
@@ -154,7 +156,7 @@ def plaque(num: int, name: str, code: str, booth: str, base: str, theme: dict) -
     centred(d, int(band_h * 0.32), "DEEP SIGNAL", f_eyebrow, T["accent"], spacing=int(W * 0.009))
 
     y = band_h + int(H * 0.048)
-    centred(d, y, f"SITE {num} OF 5", f_num, T["dim"], spacing=int(W * 0.006))
+    centred(d, y, f"SITE {num} OF {len(SITES)}", f_num, T["dim"], spacing=int(W * 0.006))
 
     y += int(H * 0.040)
     centred(d, y, name, f_title, T["ink"])
@@ -207,6 +209,13 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     verify_codes(here / "index.html")
+
+    # Clear old PNGs first. Renumbering the route (5 sites -> 6) leaves stale
+    # files like plaque-3-abyss.png next to the new plaque-3-drift.png, and
+    # somebody will eventually print the wrong one.
+    for old in out.glob("plaque-*.png"):
+        old.unlink()
+
     print(f"  base URL : {base}")
     print(f"  theme    : {args.theme}   page: A5 portrait @ {DPI} dpi ({W}x{H}px)")
 
