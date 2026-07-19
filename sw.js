@@ -1,12 +1,22 @@
 /* Deep Signal service worker.
    Bump CACHE_VERSION on every deploy — the old cache is dropped on activate. */
-const CACHE_VERSION = "deep-signal-v1";
+const CACHE_VERSION = "deep-signal-v2";
 
 /* Relative so the app works from a project subpath (e.g. /deep-signal/ on Pages). */
-const SHELL = [
+
+/* Without these the app cannot open offline at all. addAll is all-or-nothing,
+   so a partial fetch (stale CDN edge mid-deploy, hall wifi dropping) rejects
+   the install and the browser retries on the next visit — rather than leaving
+   a silently half-built cache that never self-heals. */
+const CRITICAL = [
   "./",
   "./index.html",
-  "./manifest.webmanifest",
+  "./manifest.webmanifest"
+];
+
+/* Nice to have. A missing icon is a cosmetic problem, not an offline one, so
+   these are best-effort and must not fail the install. */
+const OPTIONAL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
@@ -16,9 +26,8 @@ const SHELL = [
 self.addEventListener("install", e => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    // addAll is all-or-nothing; add individually so one missing icon can't
-    // fail the whole install.
-    await Promise.all(SHELL.map(u => cache.add(u).catch(() => {})));
+    await cache.addAll(CRITICAL);
+    await Promise.all(OPTIONAL.map(u => cache.add(u).catch(() => {})));
     await self.skipWaiting();
   })());
 });
