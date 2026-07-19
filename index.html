@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#02141f"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Deep Signal"/>
+<link rel="apple-touch-icon" href="icons/icon-180.png"/>
+<link rel="icon" href="icons/icon-192.png"/>
+<title>Deep Signal — Dive Navigator</title>
+<style>
+  :root{
+    --abyss:#02141f; --deep:#06283b; --mid:#0c4a6e; --glass:rgba(180,230,255,.06);
+    --edge:rgba(140,210,255,.18); --ink:#dff3ff; --dim:#6f93a6;
+    --lume:#2ff, --lume-solid:#39f0c8; --amber:#f4a63b; --alert:#ff5c7a;
+    --mono:"SFMono-Regular",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #0a3550 0%, var(--deep) 40%, var(--abyss) 100%);
+    color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    min-height:100dvh; overflow-x:hidden;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:460px;margin:0 auto;padding:22px 20px 40px;min-height:100dvh;display:flex;flex-direction:column}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+  h1{font-size:26px;line-height:1.1;margin:.35em 0 .1em;font-weight:700;letter-spacing:-.01em}
+  h2{font-size:19px;margin:.2em 0 .5em;font-weight:650}
+  p{color:#bcd7e5;line-height:1.55;font-size:15px}
+  .screen{display:none;flex:1;flex-direction:column;animation:fade .4s ease}
+  .screen.on{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .card{background:var(--glass);border:1px solid var(--edge);border-radius:16px;padding:18px;margin:12px 0;backdrop-filter:blur(6px)}
+  button{font:inherit}
+  .btn{width:100%;padding:16px;border-radius:14px;border:1px solid var(--edge);
+    background:linear-gradient(180deg,#0e5f86,#0a4463);color:var(--ink);font-size:16px;font-weight:650;margin-top:12px;cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+  .btn.go{background:linear-gradient(180deg,#12b48f,#0b8f74);border-color:#3ff0c8}
+  .btn.ghost{background:transparent;color:var(--dim);font-weight:500;border-color:var(--edge)}
+  .btn:disabled{opacity:.4}
+  input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--edge);background:#031824;color:var(--ink);font-size:18px;font-family:var(--mono);text-align:center}
+  label{display:block;font-size:13px;color:var(--dim);margin:14px 0 6px}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .mono{font-family:var(--mono)}
+  .dim{color:var(--dim)}
+  .big{font-family:var(--mono);font-size:52px;font-weight:700;line-height:1}
+  .unit{font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.1em}
+  /* compass */
+  .gauge{position:relative;width:260px;height:260px;margin:6px auto 4px}
+  .bezel{position:absolute;inset:0;border-radius:50%;border:2px solid var(--edge);
+    box-shadow:inset 0 0 40px rgba(0,0,0,.6), 0 0 0 8px rgba(6,40,59,.5)}
+  .rose{position:absolute;inset:0;transition:transform .12s linear}
+  .tick{position:absolute;left:50%;top:6px;width:2px;height:12px;background:var(--dim);transform-origin:50% 124px;margin-left:-1px}
+  .tick.card{height:20px;background:var(--ink);width:2px}
+  .arrow{position:absolute;left:50%;top:50%;width:0;height:0;transition:transform .12s linear}
+  .arrow b{position:absolute;left:-16px;top:-104px;width:32px;height:104px;
+    background:linear-gradient(180deg,var(--amber),rgba(244,166,59,.15));clip-path:polygon(50% 0,100% 38%,62% 38%,62% 100%,38% 100%,38% 38%,0 38%);
+    filter:drop-shadow(0 0 8px rgba(244,166,59,.5))}
+  .gauge.locked .arrow b{background:linear-gradient(180deg,#5affd0,rgba(57,240,200,.15));filter:drop-shadow(0 0 14px rgba(57,240,200,.8))}
+  .gauge.locked .bezel{border-color:#39f0c8;box-shadow:inset 0 0 50px rgba(57,240,200,.25),0 0 0 8px rgba(57,240,200,.15)}
+  .hub{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+  .hub .head{font-family:var(--mono);font-size:40px;font-weight:700}
+  .hub .lab{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .stepbar{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:6px}
+  .stepbar .big{font-size:40px}
+  .pill{display:inline-block;padding:5px 12px;border-radius:99px;border:1px solid var(--edge);font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--dim)}
+  .pill.live{color:#5affd0;border-color:#2f8f78}
+  .steno{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.05em}
+  .quiz .opt{display:block;width:100%;text-align:left;padding:14px;border-radius:12px;border:1px solid var(--edge);background:var(--glass);color:var(--ink);margin-top:10px;font-size:15px;cursor:pointer}
+  .quiz .opt:active{background:#0a3a52}
+  .progress{display:flex;gap:6px;margin:4px 0 8px}
+  .progress i{flex:1;height:4px;border-radius:3px;background:var(--edge)}
+  .progress i.done{background:#39f0c8}
+  .warn{font-size:12.5px;color:var(--amber);line-height:1.4}
+  .center{text-align:center}
+  .fine{font-size:12px;color:var(--dim);line-height:1.5}
+  .adj{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:4px}
+  .adj button{width:44px;height:44px;border-radius:12px;border:1px solid var(--edge);background:var(--glass);color:var(--ink);font-size:22px}
+  .spacer{flex:1}
+  /* scanned-marker notice on the nav screen */
+  .notice{margin:0 0 6px;padding:11px 13px;border-radius:12px;border:1px solid var(--edge);
+    background:rgba(244,166,59,.09);color:var(--amber);font-size:13px;line-height:1.45;display:none}
+  .notice.on{display:block}
+  /* ?dev=1 desktop harness */
+  #devbar{position:fixed;left:0;right:0;bottom:0;z-index:99;display:none;gap:8px;align-items:center;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(2,20,31,.94);
+    border-top:1px solid var(--edge);backdrop-filter:blur(8px);flex-wrap:wrap}
+  #devbar.on{display:flex}
+  #devbar button{padding:7px 10px;border-radius:9px;border:1px solid var(--edge);background:var(--glass);
+    color:var(--ink);font-family:var(--mono);font-size:12px;cursor:pointer}
+  #devbar input[type=range]{flex:1;min-width:110px;width:auto;padding:0;accent-color:#39f0c8}
+  body.dev .wrap{padding-bottom:96px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 0. WELCOME -->
+  <section class="screen on" id="s-welcome">
+    <div class="eyebrow">Dive Log · Sydney Reef Hall</div>
+    <h1>Deep Signal</h1>
+    <p>Your GPS is dark down here — just like a real dive. You'll navigate by <b>compass bearing</b> and <b>counted fin-strokes</b> to five dive sites, logging the species and treasures you find, and surface back where you started.</p>
+    <div class="card">
+      <p class="steno">This prototype uses your phone's compass and motion sensors. They only switch on after you tap below, and nothing leaves your phone.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn go" onclick="App.begin()">Enable sensors &amp; dive in</button>
+    <button class="btn ghost" onclick="App.resetAll()">Reset saved dive</button>
+    <p class="fine" id="sensor-note"></p>
+  </section>
+
+  <!-- 1. STRIDE CALIBRATION -->
+  <section class="screen" id="s-stride">
+    <div class="eyebrow">Calibration · 1 of 2</div>
+    <h2>Trim your kick</h2>
+    <p>Find the marked line <b>A → B</b> on the floor (10&nbsp;m). Walk it at a normal pace, then enter how many steps it took.</p>
+    <div class="card">
+      <label>Marked distance (metres)</label>
+      <input id="cal-dist" class="mono" type="number" inputmode="decimal" value="10"/>
+      <label>Steps you counted A → B</label>
+      <input id="cal-steps" class="mono" type="number" inputmode="numeric" placeholder="e.g. 14"/>
+    </div>
+    <p class="fine" id="stride-out"></p>
+    <div class="spacer"></div>
+    <button class="btn go" onclick="App.saveStride()">Set my stride</button>
+  </section>
+
+  <!-- 2. HEADING CALIBRATION -->
+  <section class="screen" id="s-heading">
+    <div class="eyebrow">Calibration · 2 of 2</div>
+    <h2>Align the console</h2>
+    <p>Stand at the start (east corner of the <b>VIZ</b> booth). Hold the phone flat and point its top edge straight down the aisle <b>toward the Main Stage</b>. Hold steady, then lock it in.</p>
+    <div class="gauge" id="cal-gauge">
+      <div class="bezel"></div>
+      <div class="rose" id="cal-rose"></div>
+      <div class="hub"><div class="head mono" id="cal-head">—</div><div class="lab">raw heading</div></div>
+    </div>
+    <p class="fine">No compass reading? Your browser may need HTTPS, or motion access was declined. You can still play — tap “Skip” and steer by the aisle names.</p>
+    <div class="spacer"></div>
+    <button class="btn go" onclick="App.saveHeading()">Lock this as “toward Main Stage”</button>
+    <button class="btn ghost" onclick="App.skipHeading()">Skip — use default offset</button>
+  </section>
+
+  <!-- 3. NAVIGATE -->
+  <section class="screen" id="s-nav">
+    <div class="progress" id="prog"></div>
+    <div class="eyebrow" id="nav-leg">Leg —</div>
+    <h2 id="nav-title">—</h2>
+    <p id="nav-instr" style="margin-top:-2px">—</p>
+    <p class="notice" id="nav-notice"></p>
+
+    <div class="gauge" id="nav-gauge">
+      <div class="bezel"></div>
+      <div class="rose" id="nav-rose"></div>
+      <div class="arrow" id="nav-arrow"><b></b></div>
+      <div class="hub">
+        <div class="head mono" id="nav-head">—</div>
+        <div class="lab" id="nav-lock">turn to bearing</div>
+      </div>
+    </div>
+
+    <div class="center">
+      <span class="pill" id="ped-pill">pedometer off</span>
+    </div>
+    <div class="stepbar">
+      <span class="big" id="steps-left">0</span>
+      <span class="unit">steps to go</span>
+    </div>
+    <div class="adj">
+      <button onclick="App.bump(-1)">−</button>
+      <span class="steno" id="steps-of">of 0 &nbsp;·&nbsp; <span id="metres-of"></span></span>
+      <button onclick="App.bump(1)">＋</button>
+    </div>
+
+    <div class="spacer"></div>
+    <button class="btn go" id="arrive-btn" onclick="App.arrive()">I've reached the site</button>
+    <button class="btn ghost" onclick="App.togglePed()" id="ped-btn">Count my steps automatically</button>
+  </section>
+
+  <!-- 4. WAYPOINT / QUIZ -->
+  <section class="screen" id="s-way">
+    <div class="eyebrow" id="way-tag">Dive site</div>
+    <h2 id="way-title">—</h2>
+    <div class="card" id="way-lore"></div>
+
+    <div id="way-gate">
+      <p class="fine">Find the <b>dive-site marker</b> at the booth and enter its code word (or scan the QR) to log your find.</p>
+      <label>Site code</label>
+      <input id="way-code" class="mono" placeholder="type the code" autocapitalize="characters"/>
+      <p class="warn" id="way-err"></p>
+      <button class="btn go" onclick="App.checkCode()">Log this find</button>
+    </div>
+
+    <div id="way-quiz" class="quiz" style="display:none">
+      <h2 id="q-text" style="font-size:17px">—</h2>
+      <div id="q-opts"></div>
+      <p class="fine" id="q-fb"></p>
+      <button class="btn go" id="q-next" style="display:none" onclick="App.nextLeg()">Set course for the next site →</button>
+    </div>
+  </section>
+
+  <!-- 5. FINISH -->
+  <section class="screen" id="s-fin">
+    <div class="eyebrow">Surface interval</div>
+    <h1>Dive logged.</h1>
+    <p>You navigated the whole reef by bearing and breath alone and surfaced right where you started — at the <b>VIZ</b> booth. Five sites, five finds. Show this screen at the VIZ booth to claim your logbook stamp.</p>
+    <div class="card center"><div class="big" id="fin-count">5</div><div class="unit">sites logged</div></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" onclick="App.resetAll()">Dive again</button>
+  </section>
+
+</div>
+
+<!-- ?dev=1 harness: fakes compass + steps so the whole flow runs on a desktop -->
+<div id="devbar">
+  <span class="steno">DEV</span>
+  <input id="dev-h" type="range" min="0" max="359" step="1" value="105" aria-label="fake heading"/>
+  <span class="steno" id="dev-head" style="min-width:44px">105°</span>
+  <button onclick="Dev.face()" title="snap to the leg's target bearing">face</button>
+  <button onclick="Dev.step(1)">step</button>
+  <button onclick="Dev.step(10)">step ×10</button>
+  <button onclick="Dev.walk()" title="fill the current leg's step count">walk leg</button>
+  <button onclick="Dev.code()" title="fill in the current site's code">code</button>
+</div>
+
+<script>
+/* ---------------- ROUTE + CONTENT ----------------
+   Venue frame (degrees): EAST(toward Main Stage)=0, NORTH(Catering)=90,
+   WEST(PADI)=180, SOUTH(Pool)=270.  Calibration records the phone's raw
+   heading while pointing EAST, from which all four aisle bearings follow.
+   Distances are map estimates in metres; the site code resets drift. */
+const ROUTE = [
+  { legs:[
+      {instr:"Step off the VIZ booth into the aisle — head WEST, just clear of the booth face.", dir:180, m:4},
+      {instr:"Turn NORTH up the east aisle, toward the Catering & Bar end.", dir:90, m:11}
+    ],
+    site:{ tag:"Site 1 · The Wreck", title:"Historical Diving Society — Booth 340",
+      code:"WRECK",
+      lore:"You settle onto a broken hull furred with fifty years of growth. Brass gauges, a helmet, the ghost of a ship that never made port. Old iron, older stories.",
+      q:"A diver's classic copper-and-brass helmet feeds air through a hose from the surface. What's this style of diving called?",
+      opts:["Free diving","Surface-supplied (hard-hat) diving","Rebreather diving","Saturation-only diving"], a:1,
+      fb:"Surface-supplied — the tethered hard-hat rig that first opened the deep to working divers." }
+  },
+  { legs:[
+      {instr:"Leave the wreck heading WEST, straight across the upper avenue toward the reef gardens.", dir:180, m:26},
+      {instr:"Short jog SOUTH into the centre of the hall.", dir:270, m:6}
+    ],
+    site:{ tag:"Site 2 · The Reef", title:"Bunaken Oasis — Booth 328",
+      code:"CORAL",
+      lore:"The blue erupts into colour: staghorn thickets, a clownfish standing its ground in an anemone, parrotfish grinding the reef to sand. A whole city built by animals smaller than your thumbnail.",
+      q:"Reef-building corals owe their colour and much of their food to a partner living inside them. What is it?",
+      opts:["Tiny algae (zooxanthellae)","Plankton nets","Bacteria that glow","Sea-anemone larvae"], a:0,
+      fb:"Zooxanthellae — symbiotic algae. Stress them and the coral bleaches white." }
+  },
+  { legs:[
+      {instr:"Push on WEST toward the far wall — PADI and the shops.", dir:180, m:22},
+      {instr:"Turn SOUTH and descend to the bottom-left corner.", dir:270, m:14}
+    ],
+    site:{ tag:"Site 3 · The Abyss", title:"Abyss Scuba Diving — Booth 404",
+      code:"ABYSS",
+      lore:"The light drains away. Down here things make their own — a lantern of living cold-blue, a gulper's jaw, eyes the size of dinner plates. Pressure you can feel in your teeth.",
+      q:"That living blue-green light so many deep-sea animals produce is called…",
+      opts:["Fluorescence","Phosphorescence","Bioluminescence","Iridescence"], a:2,
+      fb:"Bioluminescence — light made by chemistry, not reflection. Your whole game is named after it." }
+  },
+  { legs:[
+      {instr:"Track EAST along the bottom avenue, past SDI Oceania.", dir:0, m:26}
+    ],
+    site:{ tag:"Site 4 · The Cave", title:"Tank Cave VR — Booth 522",
+      code:"CAVERN",
+      lore:"You slip under an overhang and the ceiling closes over you. No straight line up to the surface now — only the line you laid on the way in. Silt hangs like held breath.",
+      q:"The single most important rule that keeps cave divers alive is…",
+      opts:["Always dive at night","Always run a continuous guideline to open water","Never use a torch","Always dive alone"], a:1,
+      fb:"The guideline — your unbroken thread back to daylight. Lose it and the cave keeps you." }
+  },
+  { legs:[
+      {instr:"Rise NORTH off the cave floor into open water.", dir:90, m:10},
+      {instr:"Turn EAST and cruise the blue toward Dive Adventures.", dir:0, m:14}
+    ],
+    site:{ tag:"Site 5 · The Blue", title:"Dive Adventures — Booth 430",
+      code:"PELAGIC",
+      lore:"No bottom, no walls — just blue in every direction and shapes cruising its edge. A shadow resolves into a manta, then a school turns as one and is gone.",
+      q:"Big open-water swimmers like tuna, sharks and mantas are known as…",
+      opts:["Benthic species","Pelagic species","Intertidal species","Sessile species"], a:1,
+      fb:"Pelagic — animals of the open water column, forever on the move." }
+  }
+];
+const FINISH = { instr:"Home stretch — bear EAST back to the VIZ booth where you started.", dir:0, m:14 };
+
+/* --------------- URL QUERY ----------------
+   ?site=CODE  — scanned from a dive-site plaque. Held until the player is
+                 actually navigating, then validated against the CURRENT site
+                 only, so the sequence lock still holds.
+   ?dev=1      — desktop harness: fake compass heading + fake step input. */
+const QP  = new URLSearchParams(location.search);
+const DEV = QP.get("dev")==="1";
+let pendingSite = (QP.get("site")||"").trim().toUpperCase() || null;
+if(QP.has("site")){            // strip the code so a reload can't replay it
+  QP.delete("site");
+  const q=QP.toString();
+  try{ history.replaceState(null,"",location.pathname+(q?"?"+q:"")+location.hash); }catch(e){}
+}
+
+/* --------------- STATE --------------- */
+const KEY="deepsignal.v1";
+let S = load() || { stride:0.72, calHeading:null, defaultEast:105, idx:0, leg:0, stepsDone:0 };
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} }
+
+/* --------------- SENSORS --------------- */
+let heading=null, pedOn=false;
+let lastMag=0, lastPeakT=0, accBuf=[];
+function onOrient(e){
+  let h=null;
+  if(typeof e.webkitCompassHeading==="number") h=e.webkitCompassHeading;           // iOS
+  else if(e.absolute && typeof e.alpha==="number") h=(360-e.alpha)%360;            // Android absolute
+  if(h===null) return;
+  heading=h; render();
+}
+function onMotion(e){
+  if(!pedOn) return;
+  const a=e.accelerationIncludingGravity; if(!a) return;
+  const mag=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);
+  accBuf.push(mag); if(accBuf.length>12) accBuf.shift();
+  const avg=accBuf.reduce((s,v)=>s+v,0)/accBuf.length;
+  const now=Date.now();
+  if(mag-avg>2.2 && lastMag-avg<=2.2 && now-lastPeakT>300){ lastPeakT=now; step(); }
+  lastMag=mag;
+}
+async function enableSensors(){
+  const notes=[];
+  if(DEV){ Dev.init(); return ["dev mode — compass and steps are faked"]; }
+  try{
+    if(typeof DeviceOrientationEvent!=="undefined" && DeviceOrientationEvent.requestPermission){
+      const p=await DeviceOrientationEvent.requestPermission(); if(p!=="granted") notes.push("compass denied");
+    }
+    if(typeof DeviceMotionEvent!=="undefined" && DeviceMotionEvent.requestPermission){
+      const p=await DeviceMotionEvent.requestPermission(); if(p!=="granted") notes.push("motion denied");
+    }
+  }catch(err){ notes.push("sensor prompt blocked"); }
+  window.addEventListener("deviceorientationabsolute",onOrient,true);
+  window.addEventListener("deviceorientation",onOrient,true);
+  window.addEventListener("devicemotion",onMotion,true);
+  if(!window.isSecureContext) notes.push("needs HTTPS for compass");
+  return notes;
+}
+
+/* --------------- HELPERS --------------- */
+function targetHeading(dir){                 // raw device heading to face for a venue direction
+  const east = (S.calHeading!=null)? S.calHeading : S.defaultEast;
+  return ((east - dir)%360+360)%360;
+}
+function angDiff(a,b){ let d=((a-b)%360+540)%360-180; return d; }
+const $=id=>document.getElementById(id);
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on")); $(id).classList.add("on"); }
+
+/* build rose ticks once */
+function buildRose(el){ for(let d=0;d<360;d+=15){ const t=document.createElement("div");
+  t.className="tick"+(d%90===0?" card":""); t.style.transform=`rotate(${d}deg)`; el.appendChild(t);} }
+buildRose($("cal-rose")); buildRose($("nav-rose"));
+
+/* --------------- RENDER (per sensor tick) --------------- */
+function render(){
+  if($("s-heading").classList.contains("on")){
+    $("cal-rose").style.transform = heading!=null?`rotate(${-heading}deg)`:"";
+    $("cal-head").textContent = heading!=null?Math.round(heading)+"°":"—";
+  }
+  if($("s-nav").classList.contains("on")) renderNav();
+}
+function currentLeg(){
+  if(S.idx>=ROUTE.length) return FINISH;
+  return ROUTE[S.idx].legs[S.leg];
+}
+function renderNav(){
+  const leg=currentLeg();
+  const tgt=targetHeading(leg.dir);
+  $("nav-rose").style.transform = heading!=null?`rotate(${-heading}deg)`:"";
+  const g=$("nav-gauge"), arrow=$("nav-arrow");
+  if(heading!=null){
+    const delta=angDiff(tgt,heading);
+    arrow.style.transform=`translate(-50%,-50%) rotate(${delta}deg)`;
+    $("nav-head").textContent=Math.round(((tgt)%360))+"°";
+    const locked=Math.abs(delta)<12;
+    g.classList.toggle("locked",locked);
+    $("nav-lock").textContent = locked?"on course — walk on":"turn to bearing";
+  }else{
+    $("nav-head").textContent="—";
+    $("nav-lock").textContent="compass off — follow the aisle";
+  }
+}
+
+/* --------------- APP --------------- */
+const App={
+  async begin(){
+    const notes=await enableSensors();
+    $("sensor-note").textContent = notes.length? "Note: "+notes.join(" · ") : "";
+    // resume where we left off
+    if(S.idx>=ROUTE.length){ App.finish(); return; }
+    show(S.calHeading===null && S.idx===0 ? "s-stride" : "s-nav");
+    if(!$("s-stride").classList.contains("on")) App.startLeg();
+    App.paintStride();
+    App.applyPendingSite();
+  },
+  notice(msg){ const n=$("nav-notice"); n.textContent=msg||""; n.classList.toggle("on",!!msg); },
+  siteName(i){ return ROUTE[i].site.tag.split("·")[1].trim(); },
+  /* A scanned ?site=CODE only opens the gate for the site the player is ON.
+     Anything else is refused, so the WRECK→…→PELAGIC order can't be skipped. */
+  applyPendingSite(){
+    if(!pendingSite || !$("s-nav").classList.contains("on")) return;
+    const code=pendingSite; pendingSite=null;
+    const i=ROUTE.findIndex(r=>r.site.code===code);
+    if(i<0){ App.notice(`“${code}” isn’t a Deep Signal dive-site code.`); return; }
+    if(i<S.idx){ App.notice(`That’s the ${code} marker — already logged. You’re diving to ${App.siteName(S.idx)}.`); return; }
+    if(i>S.idx){ App.notice(`That’s the ${code} marker, further along the route. Navigate to ${App.siteName(S.idx)} and log ${ROUTE[S.idx].site.code} first.`); return; }
+    // correct site — the marker itself confirms arrival, so close out any
+    // remaining legs (this is the drift reset) and open the gate pre-filled.
+    App.notice("");
+    S.leg=ROUTE[S.idx].legs.length-1; S.stepsDone=App.legTotal(); save();
+    App.openSite();
+    $("way-code").value=code;
+    App.checkCode();
+  },
+  paintStride(){ $("stride-out").textContent = S.stride?`Current stride: ${S.stride.toFixed(2)} m/step`:""; },
+  saveStride(){
+    const d=parseFloat($("cal-dist").value), st=parseInt($("cal-steps").value,10);
+    if(!(d>0)||!(st>0)){ $("stride-out").textContent="Enter a distance and a step count above."; return; }
+    S.stride=d/st; save(); show("s-heading");
+  },
+  saveHeading(){
+    if(heading==null){ App.skipHeading(); return; }
+    S.calHeading=heading; save(); App.startLeg(); show("s-nav"); App.applyPendingSite();
+  },
+  skipHeading(){ if(S.calHeading==null) S.calHeading=null; save(); App.startLeg(); show("s-nav"); App.applyPendingSite(); },
+
+  startLeg(){
+    S.stepsDone=0; save();
+    App.notice("");
+    const leg=currentLeg();
+    const total=Math.max(1,Math.round(leg.m/S.stride));
+    // progress dots
+    const prog=$("prog"); prog.innerHTML="";
+    for(let i=0;i<ROUTE.length;i++){ const b=document.createElement("i"); if(i<S.idx)b.classList.add("done"); prog.appendChild(b); }
+    const label = (S.idx>=ROUTE.length)?"Final leg":`Leg to Site ${S.idx+1}`;
+    $("nav-leg").textContent=label + ` · segment ${S.leg+1}`;
+    $("nav-title").textContent = (S.idx>=ROUTE.length)?"Surface at VIZ":ROUTE[S.idx].site.tag.split("·")[1].trim();
+    $("nav-instr").textContent=leg.instr;
+    $("steps-of").innerHTML=`of ${total} &nbsp;·&nbsp; <span>~${leg.m} m</span>`;
+    App.updateSteps(total);
+    renderNav();
+  },
+  legTotal(){ return Math.max(1,Math.round(currentLeg().m/S.stride)); },
+  updateSteps(total){
+    total=total||App.legTotal();
+    const left=Math.max(0,total-S.stepsDone);
+    $("steps-left").textContent=left;
+    $("arrive-btn").textContent = left>0? "I've reached the site" : "I've reached the site ✓";
+  },
+  bump(n){ S.stepsDone=Math.max(0,S.stepsDone+n); save(); App.updateSteps(); },
+  togglePed(){
+    pedOn=!pedOn;
+    $("ped-btn").textContent=pedOn?"Stop auto-counting":"Count my steps automatically";
+    $("ped-pill").textContent=pedOn?"pedometer live":"pedometer off";
+    $("ped-pill").classList.toggle("live",pedOn);
+    accBuf=[];
+  },
+  arrive(){
+    // advance within legs of the current site
+    if(S.idx>=ROUTE.length){ App.finish(); return; }
+    if(S.leg < ROUTE[S.idx].legs.length-1){ S.leg++; save(); App.startLeg(); return; }
+    App.openSite();
+  },
+  openSite(){
+    const site=ROUTE[S.idx].site;
+    $("way-tag").textContent=site.tag; $("way-title").textContent=site.title;
+    $("way-lore").innerHTML=`<p style="margin:0">${site.lore}</p>`;
+    $("way-gate").style.display="block"; $("way-quiz").style.display="none";
+    $("way-code").value=""; $("way-err").textContent="";
+    show("s-way");
+  },
+  checkCode(){
+    const site=ROUTE[S.idx].site;
+    const v=($("way-code").value||"").trim().toUpperCase();
+    if(v!==site.code){ $("way-err").textContent="That's not the code on the marker — look again at the booth."; return; }
+    // ARRIVAL CONFIRMED → drift reset happens implicitly (next leg starts fresh)
+    $("way-gate").style.display="none"; $("way-quiz").style.display="block";
+    $("q-text").textContent=site.q; $("q-fb").textContent=""; $("q-next").style.display="none";
+    const box=$("q-opts"); box.innerHTML="";
+    site.opts.forEach((o,i)=>{ const b=document.createElement("button"); b.className="opt"; b.textContent=o;
+      b.onclick=()=>App.answer(i,b); box.appendChild(b); });
+  },
+  answer(i,btn){
+    const site=ROUTE[S.idx].site;
+    document.querySelectorAll("#q-opts .opt").forEach(b=>b.style.pointerEvents="none");
+    const correct=i===site.a;
+    btn.style.borderColor=correct?"#39f0c8":"#ff5c7a";
+    if(!correct) document.querySelectorAll("#q-opts .opt")[site.a].style.borderColor="#39f0c8";
+    $("q-fb").innerHTML=(correct?"✓ ":"→ ")+site.fb+"  <b>Everyone surfaces with the answer.</b>";
+    $("q-next").style.display="block";
+  },
+  nextLeg(){ S.idx++; S.leg=0; save(); if(S.idx>=ROUTE.length){ App.startLeg(); show("s-nav"); } else { App.startLeg(); show("s-nav"); } },
+  finish(){ $("fin-count").textContent=ROUTE.length; show("s-fin"); },
+  resetAll(){ localStorage.removeItem(KEY); S={stride:0.72,calHeading:null,defaultEast:105,idx:0,leg:0,stepsDone:0}; pedOn=false; show("s-welcome"); }
+};
+
+/* step() from pedometer decrements the live leg */
+function step(){ if(!$("s-nav").classList.contains("on")) return; S.stepsDone++; save(); App.updateSteps(); if(navigator.vibrate)navigator.vibrate(8); }
+
+/* --------------- ?dev=1 DESKTOP HARNESS ---------------
+   Feeds the same `heading` variable and step() entry point the real sensors
+   use, so the flow under test is the shipping one — nothing is stubbed past
+   the sensor boundary. */
+const Dev={
+  ready:false,
+  init(){
+    if(Dev.ready) return; Dev.ready=true;
+    document.body.classList.add("dev");
+    $("devbar").classList.add("on");
+    const sl=$("dev-h");
+    sl.value = S.calHeading!=null ? Math.round(S.calHeading) : S.defaultEast;
+    Dev.set(+sl.value);
+    sl.addEventListener("input",()=>Dev.set(+sl.value));
+    document.addEventListener("keydown",e=>{
+      const t=e.target.tagName;
+      if(t==="INPUT"&&e.target.type!=="range") return;      // don't hijack the code field
+      if(e.key==="ArrowLeft"){  Dev.set(heading-5); e.preventDefault(); }
+      else if(e.key==="ArrowRight"){ Dev.set(heading+5); e.preventDefault(); }
+      else if(e.key===" "){ Dev.step(1); e.preventDefault(); }
+      else if(e.key==="f"){ Dev.face(); }
+    });
+  },
+  set(h){
+    heading=((h%360)+360)%360;
+    $("dev-h").value=Math.round(heading);
+    $("dev-head").textContent=Math.round(heading)+"°";
+    render();
+  },
+  face(){ if($("s-nav").classList.contains("on")) Dev.set(targetHeading(currentLeg().dir));
+          else if($("s-heading").classList.contains("on")) Dev.set(S.defaultEast); },
+  step(n){ for(let i=0;i<n;i++) step(); },
+  walk(){ if(!$("s-nav").classList.contains("on")) return;
+          S.stepsDone=App.legTotal(); save(); App.updateSteps(); },
+  code(){ if($("s-way").classList.contains("on") && S.idx<ROUTE.length)
+            $("way-code").value=ROUTE[S.idx].site.code; }
+};
+if(DEV) Dev.init();   // script sits at end of <body>, so the DOM is ready
+
+/* --------------- OFFLINE --------------- */
+if("serviceWorker" in navigator && window.isSecureContext){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
